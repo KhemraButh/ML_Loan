@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import requests
 import dice_ml
 from dice_ml import Dice
+from sqlalchemy import inspect
 
 # -------- Session State for Login --------
 if 'authenticated' not in st.session_state:
@@ -80,8 +81,20 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Database connection
-engine = create_engine('postgresql://postgres:TheK@localhost:5433/postgres')
-from sqlalchemy import inspect
+
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",  # This will be set on Streamlit Cloud
+    "postgresql://postgres:TheK@localhost:5433/postgres"  # Local default
+)
+@st.cache_resource
+def get_engine():
+    return create_engine(DATABASE_URL)
+
+engine = get_engine()
+
+# Use the inspector
+inspector = inspect(engine)
+
 
 
 #inspector = inspect(connection)
