@@ -81,38 +81,64 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Database connection
+# Database connection - Using Streamlit's secrets management
+@st.cache_resource
+def get_database_engine():
+    """
+    Creates a SQLAlchemy engine. 
+    Prioritizes Streamlit Cloud's built-in DB, falls back to local secrets.
+    """
+    try:
+        # 1. First, try Streamlit Cloud's built-in database
+        conn_info = st.secrets.get("connections", {}).get("postgresql", {})
+        if conn_info:
+            url = conn_info.get("url")
+            if url:
+                engine = create_engine(url)
+                if engine:
+                    st.sidebar.success("✅ Connected to Cloud Database")
+                    return engine
+                    
+        # 2. Fall back to local development database from secrets
+        local_db_url = st.secrets["connections"]["local_postgres"]["url"]
+        engine = create_engine(local_db_url)
+        st.sidebar.success("✅ Connected to Local Database")
+        return engine
+        
+    except KeyError:
+        st.sidebar.error("❌ Database configuration not found in secrets.toml")
+        return None
+    except Exception as e:
+        st.sidebar.error(f"❌ Database connection failed: {e}")
+        return None
 
-engine = create_engine('postgresql://postgres:TheK@localhost:5433/postgres')
+# Initialize the engine
+engine = get_database_engine()
 from sqlalchemy import inspect
 
 
 
 #inspector = inspect(connection)
 def get_next_application_id():
+    if engine is None:
+        return "KH00001"  # Fallback if no database
+    
     try:
-        with engine.connect() as connection:
-            inspector = inspect(connection)
-            table_exists = 'loancamdata' in inspector.get_table_names()
-
-            if not table_exists:
-                return "KH00001"
-
-            result = connection.execute(text("""
-                SELECT "Application_ID" 
-                FROM loancamdata
-                ORDER BY CAST(SUBSTRING("Application_ID", 3) AS INTEGER) DESC 
-                LIMIT 1
-            """)).scalar_one_or_none()
-
-            if result:
-                last_id_num = int(result[2:])
-                next_id_num = last_id_num + 1
-                return f"KH{next_id_num:05d}"
-            else:
-                return "KH00001"
+        # Query the latest application ID from the database
+        result = engine.execute("SELECT application_id FROM applications ORDER BY application_id DESC LIMIT 1;")
+        latest_id = result.scalar()
+        
+        if latest_id:
+            # Extract the numeric part and increment
+            numeric_part = int(latest_id[2:])  # Remove 'KH' prefix
+            next_numeric = numeric_part + 1
+            return f"KH{next_numeric:05d}"  # Format with leading zeros
+        else:
+            return "KH00001"  # First application
+            
     except Exception as e:
-        st.error(f"Error getting Application ID: {e}")
-        return "KH00001"
+        st.sidebar.warning(f"Could not generate ID from database: {e}")
+        return "KH00001"  # Fallback
 
 def calculate_derived_fields(data):
     """Calculate DTI and LVR before saving to database"""
