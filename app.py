@@ -82,18 +82,8 @@ st.markdown("""
 
 # Database connection
 
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",  # This will be set on Streamlit Cloud
-    "postgresql://postgres:TheK@localhost:5433/postgres"  # Local default
-)
-@st.cache_resource
-def get_engine():
-    return create_engine(DATABASE_URL)
-
-engine = get_engine()
-
-# Use the inspector
-inspector = inspect(engine)
+engine = create_engine('postgresql://postgres:TheK@localhost:5433/postgres')
+from sqlalchemy import inspect
 
 
 
