@@ -81,42 +81,50 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Database connection
-# Database connection - Using Streamlit's secrets management
-@st.cache_resource
-def get_database_engine():
-    """
-    Creates a SQLAlchemy engine. 
-    Prioritizes Streamlit Cloud's built-in DB, falls back to local secrets.
-    """
+# Remove this line: engine = get_database_engine()
+
+# Initialize the engine ONLY when needed and cache it properly
+@st.cache_resource(show_spinner="Connecting to database...")
+def get_engine():
+    """Safely get database engine, handling missing secrets."""
     try:
-        # 1. First, try Streamlit Cloud's built-in database
-        conn_info = st.secrets.get("connections", {}).get("postgresql", {})
-        if conn_info:
-            url = conn_info.get("url")
-            if url:
+        # Try Cloud database first
+        try:
+            if 'postgresql' in st.secrets.get('connections', {}):
+                url = st.secrets.connections.postgresql.url
                 engine = create_engine(url)
-                if engine:
-                    st.sidebar.success("✅ Connected to Cloud Database")
-                    return engine
-                    
-        # 2. Fall back to local development database from secrets
-        local_db_url = st.secrets["connections"]["local_postgres"]["url"]
-        engine = create_engine(local_db_url)
-        st.sidebar.success("✅ Connected to Local Database")
-        return engine
+                # Test connection
+                with engine.connect() as conn:
+                    conn.execute(text("SELECT 1"))
+                st.sidebar.success("✅ Connected to Cloud DB")
+                return engine
+        except:
+            pass
         
-    except KeyError:
-        st.sidebar.error("❌ Database configuration not found in secrets.toml")
+        # Try Local database
+        try:
+            if 'local_postgres' in st.secrets.get('connections', {}):
+                url = st.secrets.connections.local_postgres.url
+                engine = create_engine(url)
+                with engine.connect() as conn:
+                    conn.execute(text("SELECT 1"))
+                st.sidebar.success("✅ Connected to Local DB")
+                return engine
+        except:
+            pass
+            
+        st.sidebar.error("❌ Could not connect to any database")
         return None
+        
     except Exception as e:
-        st.sidebar.error(f"❌ Database connection failed: {e}")
+        st.sidebar.error(f"❌ Connection failed: {e}")
         return None
 
-# Initialize the engine
-engine = get_database_engine()
-from sqlalchemy import inspect
-
-
+# Use a function to get the engine throughout your app
+def get_db():
+    if 'engine' not in st.session_state:
+        st.session_state.engine = get_engine()
+    return st.session_state.engine
 
 #inspector = inspect(connection)
 def get_next_application_id():
@@ -1232,6 +1240,7 @@ def show_form_page():
 def get_branch_summary():
     """Fetch summary statistics by branch using RM_Code mapping"""
     try:
+        engine = get_db()
         # Check if engine is available first
         if engine is None:
             st.error("Database connection is not available")
