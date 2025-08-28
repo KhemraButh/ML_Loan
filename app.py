@@ -131,9 +131,9 @@ def calculate_derived_fields(data):
 
 # Define model paths
 MODEL_PATHS = {
-    'Home Loan': "/Users/thekhemfee/Downloads/Intelligent_Loan_Approval/frontend/hl_pipeline.pkl",
-    'SME Loan': "/Users/thekhemfee/Downloads/Intelligent_Loan_Approval/frontend/sme_pipeline.pkl",
-    'Personal Loan': "/Users/thekhemfee/Downloads/Intelligent_Loan_Approval/frontend/person_pipeline.pkl"
+    'Home Loan': "/frontend/hl_pipeline.pkl",
+    'SME Loan': "/frontend/sme_pipeline.pkl",
+    'Personal Loan': "/frontend/person_pipeline.pkl"
 }
 
 # Load all models at startup
@@ -327,7 +327,7 @@ def show_approval_dashboard():
     # Header Section
     col1, col2 = st.columns([1, 4])
     with col1:
-        st.image("/Users/thekhemfee/Downloads/Intelligent_Loan_Approval/frontend/Logo-CMCB.png", width=100)
+        st.image("/frontend/Logo-CMCB.png", width=100)
     with col2:
         st.markdown("<h1 style='text-align: left; color: green;'>Approval Dashboard for Risk Team</h1>", 
                     unsafe_allow_html=True)
@@ -505,7 +505,7 @@ def show_home_page():
     # Top Row
     top_col1, top_col2 = st.columns([1, 4])
     with top_col1:
-        st.image("/Users/thekhemfee/Downloads/Intelligent_Loan_Approval/frontend/Logo-CMCB.png", width=100)
+        st.image("/frontend/Logo-CMCB.png", width=100)
     with top_col2:
         st.markdown("<h1 style='text-align: left; color: green;'>INTELLIGENT LOAN APPROVAL SYSTEM</h1>", unsafe_allow_html=True)
 
@@ -568,8 +568,8 @@ def show_home_page():
                     st.error("❌ Invalid credentials")
 def load_dice_person():
     # 1. Load model and data
-    model_path = '/Users/thekhemfee/Downloads/Intelligent_Loan_Approval/frontend/person_pipeline.pkl'
-    data_path = '/Users/thekhemfee/Downloads/Intelligent_Loan_Approval/person_data.csv'
+    model_path = '/frontend/person_pipeline.pkl'
+    data_path = '/person_data.csv'
 
     hl_gb_model = joblib.load(model_path)
     data = pd.read_csv(data_path)
@@ -598,8 +598,8 @@ def load_dice_person():
     return explainer, hl_gb_model, numerical_features + categorical_features
 def load_dice_hl():
     # 1. Load model and data
-    model_path = '/Users/thekhemfee/Downloads/Intelligent_Loan_Approval/frontend/hl_pipeline.pkl'
-    data_path = '/Users/thekhemfee/Downloads/Intelligent_Loan_Approval/hl_data.csv'
+    model_path = '/frontend/hl_pipeline.pkl'
+    data_path = '/hl_data.csv'
 
     hl_gb_model = joblib.load(model_path)
     data = pd.read_csv(data_path)
@@ -628,8 +628,8 @@ def load_dice_hl():
     return explainer, hl_gb_model, numerical_features + categorical_features
 def load_dice_sme():
     # 1. Load model and data
-    model_path = '/Users/thekhemfee/Downloads/Intelligent_Loan_Approval/frontend/sme_pipeline.pkl'
-    data_path = '/Users/thekhemfee/Downloads/Intelligent_Loan_Approval/sme_data.csv'
+    model_path = '/frontend/sme_pipeline.pkl'
+    data_path = '/sme_data.csv'
 
     hl_gb_model = joblib.load(model_path)
     data = pd.read_csv(data_path)
@@ -1250,7 +1250,7 @@ def show_stakeholder_dashboard():
     # =============== HEADER SECTION ===============
     top_col1, top_col2 = st.columns([1, 4])
     with top_col1:
-        st.image("/Users/thekhemfee/Downloads/Intelligent_Loan_Approval/frontend/Logo-CMCB.png", width=120)  # update path accordingly
+        st.image("/frontend/Logo-CMCB.png", width=120)  # update path accordingly
     with top_col2:
         st.markdown(
             "<h1 style='text-align: left; color: #0a7d34;'>📊 Stakeholder Dashboard</h1>",
@@ -1278,7 +1278,7 @@ def show_stakeholder_dashboard():
         # =============== MAP (PLOTLY) ===============
     st.subheader("🌍 Loan Disbursements by Province")
 
-    cambodia = gpd.read_file("/Users/thekhemfee/Downloads/Intelligent_Loan_Approval/frontend/geoBoundaries-KHM-ADM1_simplified.geojson")
+    cambodia = gpd.read_file("/frontend/geoBoundaries-KHM-ADM1_simplified.geojson")
     disbursements = pd.DataFrame({
         'Province': ['Stung Treng', 'Phnom Penh', 'Kampong Thom', 'Koh Kong'],
         'Amount': [500000, 1200000, 750000, 300000]
