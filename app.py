@@ -130,10 +130,12 @@ def calculate_derived_fields(data):
 
 
 # Define model paths
+BASE_DIR = os.path.dirname(__file__)  # folder where app.py lives
+
 MODEL_PATHS = {
-    'Home Loan': "/frontend/hl_pipeline.pkl",
-    'SME Loan': "/frontend/sme_pipeline.pkl",
-    'Personal Loan': "/frontend/person_pipeline.pkl"
+    'Home Loan': os.path.join(BASE_DIR, "frontend", "hl_pipeline.pkl"),
+    'SME Loan': os.path.join(BASE_DIR, "frontend", "sme_pipeline.pkl"),
+    'Personal Loan': os.path.join(BASE_DIR, "frontend", "person_pipeline.pkl"),
 }
 
 # Load all models at startup
