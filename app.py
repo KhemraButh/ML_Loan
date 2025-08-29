@@ -82,7 +82,12 @@ st.markdown("""
 
 
 # Database connection
-db_url = st.secrets["database"]["url"]
+# Load database URL (use secrets if available, otherwise fallback for local dev)
+db_url = st.secrets.get("database", {}).get(
+    "url", "postgresql://postgres:password@localhost:5432/loan_db"
+)
+
+# Global engine
 engine = create_engine(db_url)
 
 
@@ -1197,65 +1202,49 @@ def show_form_page():
                                                 except Exception as e:
                                                     st.error(f"An unexpected error occurred: {str(e)}")
                                                     st.info("Please try again or contact support")
+
 def get_branch_summary():
     """Fetch summary statistics by branch using RM_Code mapping"""
     try:
-        engine = get_db()
-        # Check if engine is available first
-        if engine is None:
-            st.error("Database connection is not available")
-            return pd.DataFrame()
-            
         with engine.connect() as conn:
-            # Use parameterized query to prevent SQL injection and improve performance
             query = text("""
                 SELECT 
                     b.branch_code,
                     b.branch_name,
-                    COUNT(l."Application_ID") as total_applications,
-                    SUM(CASE WHEN l."Loan_Status" = 'Pending' THEN 1 ELSE 0 END) as pending_count,
-                    SUM(CASE WHEN l."Loan_Status" = 'Rejected' THEN 1 ELSE 0 END) as rejected_count,
-                    SUM(CASE WHEN l."Loan_Status" = 'Approved' THEN 1 ELSE 0 END) as approved_count,
-                    ROUND(SUM(CASE WHEN l."Loan_Status" = 'Approved' THEN 1 ELSE 0 END) * 100.0 / 
-                          NULLIF(COUNT(l."Application_ID"), 0), 2) as approval_rate
+                    COUNT(l."Application_ID") as total_cases,
+                    SUM(CASE WHEN l."Loan Status" = 'Pending' THEN 1 ELSE 0 END) as case_pending,
+                    SUM(CASE WHEN l."Loan Status" = 'Rejected' THEN 1 ELSE 0 END) as cases_rejected,
+                    SUM(CASE WHEN l."Loan Status" = 'Approved' THEN 1 ELSE 0 END) as cases_approved
                 FROM branch_reference b
                 LEFT JOIN loancamdata l ON l."RM_Code" = ANY(b.rm_codes)
-                WHERE l."Date" >= DATE_TRUNC('month', CURRENT_DATE)
+                WHERE TO_DATE(l."Date", 'YYYY-MM-DD') >= DATE_TRUNC('month', CURRENT_DATE)
                 GROUP BY b.branch_code, b.branch_name
                 ORDER BY b.branch_code
             """)
             
             result = conn.execute(query)
             df = pd.DataFrame(result.fetchall(), columns=result.keys())
-            
-            # Handle empty results
-            if df.empty:
-                st.warning("No data found for the current month")
-                return df
-            
+
             # Rename columns for display
-            column_mapping = {
+            df = df.rename(columns={
                 'branch_code': 'Branch Code',
                 'branch_name': 'Branch Name',
-                'total_applications': 'Total Applications',
-                'pending_count': 'Pending',
-                'rejected_count': 'Rejected',
-                'approved_count': 'Approved',
-                'approval_rate': 'Approval Rate %'
-            }
-            df = df.rename(columns=column_mapping)
-            
-            # Fill NaN values with 0 for calculated columns
-            df = df.fillna(0)
-            
+                'total_cases': 'Total Application',
+                'case_pending': 'Pending Applicant',
+                'cases_rejected': 'Rejected Applicant',
+                'cases_approved': 'Approved Applicant'
+            })
+
             return df
-            
+
     except SQLAlchemyError as e:
         st.error(f"Database error: {str(e)}")
         return pd.DataFrame()
-    except Exception as e:
-        st.error(f"Unexpected error: {str(e)}")
-        return pd.DataFrame()
+
+
+
+
+
 def load_loan_data():
     try:
         with engine.connect() as conn:
