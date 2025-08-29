@@ -84,7 +84,7 @@ st.markdown("""
 # Database connection
 # Load database URL (use secrets if available, otherwise fallback for local dev)
 db_url = st.secrets.get("database", {}).get(
-    "url", "postgresql://postgres:password@localhost:5433/loan_db"
+    "url", "postgresql://postgres:TheK@localhost:5433/loan_db"
 )
 
 # Global engine
