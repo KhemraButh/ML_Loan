@@ -80,7 +80,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-
 # Database connection
 import streamlit as st
 import sqlite3
@@ -139,9 +138,6 @@ def init_db():
                 df.to_sql("loancamdata", conn, if_exists="replace", index=False)
 
             conn.close()
-            st.success(f"Database created at {DB_PATH} with table 'loancamdata'.")
-        else:
-            st.info(f"Database {DB_PATH} already exists.")
         
         st.session_state["db_initialized"] = True
 
