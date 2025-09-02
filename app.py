@@ -157,6 +157,57 @@ db_url = f"sqlite:///{DB_PATH}"
 engine = create_engine(db_url)
 
 
+import sqlite3
+import pandas as pd
+from sqlalchemy import create_engine, text
+import os
+
+DB_PATH = "loancam.db"
+
+# -----------------------------
+# Sample branch data
+# -----------------------------
+branch_data = [
+    {"branch_code": "B001", "branch_name": "Phnom Penh Central", "rm_codes": "RM01,RM02,RM03"},
+    {"branch_code": "B002", "branch_name": "Siem Reap", "rm_codes": "RM04,RM05"},
+    {"branch_code": "B003", "branch_name": "Battambang", "rm_codes": "RM06,RM07"},
+]
+
+df_branch = pd.DataFrame(branch_data)
+
+# -----------------------------
+# Create branch_reference table if not exists
+# -----------------------------
+conn = sqlite3.connect(DB_PATH)
+cur = conn.cursor()
+
+# Create table
+cur.execute("""
+    CREATE TABLE IF NOT EXISTS branch_reference (
+        branch_code TEXT PRIMARY KEY,
+        branch_name TEXT,
+        rm_codes TEXT
+    )
+""")
+
+# Insert sample data (replace if exists)
+for _, row in df_branch.iterrows():
+    cur.execute("""
+        INSERT OR REPLACE INTO branch_reference (branch_code, branch_name, rm_codes)
+        VALUES (?, ?, ?)
+    """, (row.branch_code, row.branch_name, row.rm_codes))
+
+conn.commit()
+conn.close()
+
+# -----------------------------
+# Create global engine for querying
+# -----------------------------
+db_url = f"sqlite:///{DB_PATH}"
+engine = create_engine(db_url)
+
+print("branch_reference table created and populated successfully!")
+
 #inspector = inspect(connection)
 def get_next_application_id():
     if engine is None:
