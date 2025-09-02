@@ -14,8 +14,8 @@ psycopg2-binary>=2.9
 # --- ML / XAI ---
 scikit-learn==1.6.0
 dice-ml>=0.11
-# shap>=0.45     # uncomment if you actually use SHAP
-
+shap     # uncomment if you actually use SHAP
+dice-ml
 # --- Geospatial ---
 geopandas>=0.14
 Fiona>=1.9
