@@ -1323,10 +1323,13 @@ from datetime import date
 import pandas as pd
 from sqlalchemy import text
 
+from datetime import date
+import pandas as pd
+from sqlalchemy import text
+
 def get_branch_summary():
     """Fetch summary statistics by branch using RM_Code mapping (SQLite compatible)"""
     try:
-        # Get first day of current month as string
         first_day_of_month = date.today().replace(day=1).isoformat()
 
         with engine.connect() as conn:
@@ -1334,14 +1337,14 @@ def get_branch_summary():
                 SELECT 
                     b.branch_code,
                     b.branch_name,
-                    COUNT(l.Application_ID) as total_cases,
-                    SUM(CASE WHEN l.Loan_Status = 'Pending' THEN 1 ELSE 0 END) as case_pending,
-                    SUM(CASE WHEN l.Loan_Status = 'Rejected' THEN 1 ELSE 0 END) as cases_rejected,
-                    SUM(CASE WHEN l.Loan_Status = 'Approved' THEN 1 ELSE 0 END) as cases_approved
+                    COUNT(l."Application_ID") as total_cases,
+                    SUM(CASE WHEN l."Loan Status" = 'Pending' THEN 1 ELSE 0 END) as case_pending,
+                    SUM(CASE WHEN l."Loan Status" = 'Rejected' THEN 1 ELSE 0 END) as cases_rejected,
+                    SUM(CASE WHEN l."Loan Status" = 'Approved' THEN 1 ELSE 0 END) as cases_approved
                 FROM branch_reference b
-                LEFT JOIN loancamdata l 
-                    ON ',' || b.rm_codes || ',' LIKE '%,' || l.RM_Code || ',%'
-                    AND l.Date >= :first_day
+                LEFT JOIN loancamdata l
+                    ON ',' || b.rm_codes || ',' LIKE '%,' || l."RM_Code" || ',%'
+                    AND l."Date" >= :first_day
                 GROUP BY b.branch_code, b.branch_name
                 ORDER BY b.branch_code
             """)
@@ -1349,7 +1352,6 @@ def get_branch_summary():
             result = conn.execute(query, {"first_day": first_day_of_month})
             df = pd.DataFrame(result.fetchall(), columns=result.keys())
 
-            # Rename columns for display
             df = df.rename(columns={
                 'branch_code': 'Branch Code',
                 'branch_name': 'Branch Name',
@@ -1364,7 +1366,6 @@ def get_branch_summary():
     except Exception as e:
         st.error(f"Database error: {str(e)}")
         return pd.DataFrame()
-
 def load_loan_data():
     try:
         with engine.connect() as conn:
