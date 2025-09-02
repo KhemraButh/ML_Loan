@@ -82,12 +82,78 @@ st.markdown("""
 
 
 # Database connection
-# Load database URL (use secrets if available, otherwise fallback for local dev)
-db_url = st.secrets.get("database", {}).get(
-    "url", "postgresql://postgres:TheK@localhost:5433/loan_db"
-)
+import streamlit as st
+import sqlite3
+import pandas as pd
+from sqlalchemy import create_engine
 
-# Global engine
+DB_PATH = "loancam.db"
+CSV_PATH = "loancamdata.csv"
+
+def init_db():
+    if not st.session_state.get("db_initialized", False):
+        if not os.path.exists(DB_PATH):
+            conn = sqlite3.connect(DB_PATH)
+
+            # Define table columns and types
+            columns = {
+                "Application_ID": "TEXT",
+                "Full_Name": "TEXT",
+                "Age": "INTEGER",
+                "Location": "TEXT",
+                "Date": "TEXT",
+                "Loan_Type": "TEXT",
+                "Marital_Status": "TEXT",
+                "Collateral_Type": "TEXT",
+                "Collateral_Value": "REAL",
+                "Employee_Status": "TEXT",
+                "Income": "REAL",
+                "Loan_Term": "INTEGER",
+                "Loan_Amount": "REAL",
+                "Monthly_Payment": "REAL",
+                "Debt": "REAL",
+                "Dti": "REAL",
+                "LVR": "REAL",
+                "Guarantor": "TEXT",
+                "Customer_Status": "TEXT",
+                "Customer_Relation": "TEXT",
+                "Interest_Rate": "REAL",
+                "Loan_Reason": "TEXT",
+                "Credit_History": "INTEGER",
+                "Loan_Status": "TEXT",
+                "Loan_Binary_Status": "INTEGER",
+                "Guarantor_Binary": "INTEGER",
+                "Customer_Status_Encoded": "REAL",
+                "RM_Code": "TEXT",
+                "id_card": "TEXT",
+                "land_plan": "TEXT"
+            }
+
+            # Create table
+            columns_sql = ", ".join([f"{col} {dtype}" for col, dtype in columns.items()])
+            conn.execute(f"CREATE TABLE loancamdata ({columns_sql});")
+
+            # Load CSV if exists
+            if os.path.exists(CSV_PATH):
+                df = pd.read_csv(CSV_PATH)
+                df.to_sql("loancamdata", conn, if_exists="replace", index=False)
+
+            conn.close()
+            st.success(f"Database created at {DB_PATH} with table 'loancamdata'.")
+        else:
+            st.info(f"Database {DB_PATH} already exists.")
+        
+        st.session_state["db_initialized"] = True
+
+# -----------------------------
+# Initialize DB first
+# -----------------------------
+init_db()
+
+# -----------------------------
+# Create global engine
+# -----------------------------
+db_url = f"sqlite:///{DB_PATH}"
 engine = create_engine(db_url)
 
 
@@ -121,7 +187,6 @@ def calculate_derived_fields(data):
         data['Dti'] = 0
     except Exception:
         data['Dti'] = 0
-
     try:
         data['LVR'] = (data['Loan Amount'] / data['Collateral Value']) * 100 if data['Collateral Value'] > 0 else 0
     except ZeroDivisionError:
@@ -1240,10 +1305,6 @@ def get_branch_summary():
     except SQLAlchemyError as e:
         st.error(f"Database error: {str(e)}")
         return pd.DataFrame()
-
-
-
-
 
 def load_loan_data():
     try:
